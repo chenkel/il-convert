@@ -56,6 +56,8 @@ filter_name = 'Sex'
 
 group_slots = {'1': False, '2': False, '3': False, '4': False, '5': False, '6': False, '7': False, '8': False}
 unfit_rows = []
+unfit_rows_f = []
+unfit_rows_m = []
 currentSlot = 0
 results = []
 temp_row = {}
@@ -71,6 +73,7 @@ branch_list = []
 study_list = []
 code_list = []
 ids_list = []
+sex_list = []
 
 
 
@@ -120,10 +123,12 @@ def find_group(row):
     return assigend_group
 
 
-def try_to_fill_in(row, is_new):
+def try_to_fill_in(row, is_new, sex='_'):
     global currentSlot
     global results
     global unfit_rows
+    global unfit_rows_f
+    global unfit_rows_m
     global temp_row
 
     # # ID, bart, bbereich, branch, Study, Code mit | trennen
@@ -148,6 +153,7 @@ def try_to_fill_in(row, is_new):
         # print(row)
         # exit()
         ids_list.append(row['\ufeffID'])
+        sex_list.append(row['Sex'])
 
         if current_age != 999:
             row_age_average.append(current_age)
@@ -174,14 +180,19 @@ def try_to_fill_in(row, is_new):
         return True
     else:
         if is_new:
-            unfit_rows.append(row)
+            if sex == '_':
+                unfit_rows.append(row)
+            elif sex == 'female':
+                unfit_rows_f.append(row)
+            elif sex == 'male':
+                unfit_rows_m.append(row)
         return False
 
 
 def finish_row():
     global temp_row, currentSlot, results
     global row_age_average, row_bdauer_average, row_mitarb_average, row_kennen_average, row_sem_average
-    global bart_list, bbereich_list,  branch_list, study_list, code_list, ids_list
+    global bart_list, bbereich_list,  branch_list, study_list, code_list, ids_list, sex_list
 
     temp_row['age_avg'] = calc_average(row_age_average)
     temp_row['bdauer_avg'] = calc_average(row_bdauer_average)
@@ -195,6 +206,7 @@ def finish_row():
     temp_row['Study_a'] = study_list
     temp_row['code_a'] = code_list
     temp_row['IDs'] = ids_list
+    temp_row['Sex_a'] = sex_list
 
     results.append(temp_row)
     temp_row = {}
@@ -210,6 +222,7 @@ def finish_row():
     study_list = []
     code_list = []
     ids_list = []
+    sex_list = []
 
 
 def calc_average(row_age_average):
@@ -234,12 +247,12 @@ def do_it():
             elif row['Sex'] == '999':
                 unfit_rows.append(row)
 
-    fit_rows(female_rows)
+    fit_rows(female_rows, 'female')
 
-    fit_rows(male_rows)
+    fit_rows(male_rows, 'male')
 
     print('Volle Reihen: ', len(results))
-    print('Noch ungematched: ', len(unfit_rows))
+    print('Noch ungematched: ', len(unfit_rows) + len(unfit_rows_f) + len(unfit_rows_m))
 
     flat_list = []
     for sublist in group_slot_names:
@@ -258,6 +271,7 @@ def do_it():
     flat_list.append('bart_a')
     flat_list.append('code_a')
     flat_list.append('IDs')
+    flat_list.append('Sex_a')
     # print(flat_list)
 
     with open('data-output.tsv', 'w') as csv_out:
@@ -268,12 +282,23 @@ def do_it():
             wr.writerow(result)
 
 
-def fit_rows(given_rows):
+def fit_rows(given_rows, sex):
     for row in given_rows:
-        try_to_fill_in(row, True)
+        try_to_fill_in(row, True, sex)
+        # Verteile die 999
         for urow in unfit_rows:
             if try_to_fill_in(urow, False):
                 unfit_rows.remove(urow)
+        # Verteile die nicht zugeteilten Frauen
+        if sex == 'female':
+            for urow_f in unfit_rows_f:
+                if try_to_fill_in(urow_f, False, sex):
+                    unfit_rows_f.remove(urow_f)
+        # Verteile die nicht zugeteilten Männer
+        else:
+            for urow_m in unfit_rows_m:
+                if try_to_fill_in(urow_m, False, sex):
+                    unfit_rows_m.remove(urow_m)
     finish_row()
 
 
