@@ -159,7 +159,7 @@ def try_to_fill_in(row, is_new):
             row_mitarb_average.append(current_mitarb)
 
         if current_kennen != 999:
-            row_kennen_average.append(current_age)
+            row_kennen_average.append(current_kennen)
 
         if current_sem != 999:
             row_sem_average.append(current_sem)
@@ -216,7 +216,7 @@ def calc_average(row_age_average):
     if (sum(row_age_average)) != 0:
         return str(sum(row_age_average) / float(len(row_age_average)))
     else:
-        return 'NA'
+        return '999'
 
 
 def do_it():
@@ -260,8 +260,9 @@ def do_it():
     flat_list.append('IDs')
     # print(flat_list)
 
-    with open('data-output.csv', 'w') as csv_out:
-        wr = csv.DictWriter(csv_out, delimiter=';', fieldnames=flat_list, dialect=csv.excel, quoting=csv.QUOTE_ALL, quotechar='"')
+    with open('data-output.tsv', 'w') as csv_out:
+        # wr = csv.DictWriter(csv_out, fieldnames=flat_list)
+        wr = csv.DictWriter(csv_out, fieldnames=flat_list, dialect='excel-tab')
         wr.writeheader()
         for result in results:
             wr.writerow(result)
